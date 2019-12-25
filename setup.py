@@ -27,7 +27,11 @@ setup(
     ],
     keywords="",
     packages=find_packages(exclude=["docs", "tests*"]),
-    ext_modules=[Extension("smaz", ["smazmodule.c"])],
+    ext_modules=[
+        Extension(
+            "smaz", [path.join(here, "smazmodule.c"), path.join(here, "smaz", "smaz.c")]
+        )
+    ],
     include_package_data=True,
     author="Luis Nell",
     author_email="luis@originell.org",
