@@ -12,6 +12,7 @@ flake8 = "*"
 pytest = "*"
 pytest-sugar = "*"
 pytest-cov = "*"
+hypothesis = "*"
 
 [packages]
 
