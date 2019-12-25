@@ -21,11 +21,13 @@ setup(
     download_url="https://github.com/originell/smaz-py3/tarball/" + __version__,
     license="BSD",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: BSD License",
+        "License :: OSI Approved :: MIT License",
     ],
-    keywords="",
+    keywords="smaz string compression",
     packages=find_packages(exclude=["docs", "tests*"]),
     ext_modules=[
         Extension(
