@@ -2,9 +2,11 @@
 
 # 1.1.0 - 2021-08-24
 
-Switched to building wheels for all popular platforms.
+This release does not introduce any new features. Only the way we package smaz-py3 is
+updated. The changes should make installation faster and easier for almost everyone.
 
-This should make installation easier and faster.
+In detail: switched to building wheels for all popular platforms. This also includes 
+Apple Silicon based Macs.
 
 # 1.0.2 - 2021-07-29
 
