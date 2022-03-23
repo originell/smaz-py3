@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.1.1 - 2022-03-23
+
+Python 3.10 Support
+
 # 1.1.0 - 2021-08-24
 
 This release does not introduce any new features. Only the way we package smaz-py3 is
