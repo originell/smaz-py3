@@ -13,7 +13,7 @@ generated strings using most of unicode, to better guard against edge cases.
 You are working with tons of short strings (text messages, urls,...) and want to save
 space.
 
-According to the original code and notes, it achieves best compression with english
+According to the original code and notes, it achieves the best compression with english
 strings (up to 50%) that do not contain a ton of numbers. However, any other language
 might just work as well (allegedly still up to 30%).
 
