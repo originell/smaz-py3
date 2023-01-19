@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.1.2 - 2023-01-19
+
+Python 3.11 Support
+
 # 1.1.1 - 2022-03-23
 
 Python 3.10 Support
