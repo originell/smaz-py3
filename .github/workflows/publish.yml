@@ -115,7 +115,7 @@ jobs:
           python -c "import smaz; print(smaz.compress('foobar'))"
   upload_pypi:
     name: Upload to PyPI
-    needs: [ build_wheels, build_sdist ]
+    needs: [ upload_test_pypi, build_wheels, build_sdist ]
     runs-on: ubuntu-latest
     if: github.repository == 'originell/smaz-py3'
     steps:
