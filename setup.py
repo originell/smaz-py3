@@ -32,7 +32,7 @@ setup(
     packages=find_packages(exclude=["docs", "tests*"]),
     ext_modules=[
         Extension(
-            "smaz", [path.join(here, "smazmodule.c"), path.join(here, "smaz", "smaz.c")]
+            "smaz", ["smazmodule.c", path.join("smaz", "smaz.c")]
         )
     ],
     include_package_data=True,
