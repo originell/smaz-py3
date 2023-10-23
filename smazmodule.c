@@ -23,7 +23,7 @@ static PyObject *py_smaz_compress(PyObject *self, PyObject *args) {
                     output_buffer, output_buffer_size);
   /*
    * If the compressed string didn't fit into the first 4096, we will get 4097
-   * eturned. So, we continue increasing memory until the compressed output
+   * returned. So, we continue increasing memory until the compressed output
    * fits.
    */
   while (output_buffer_size + 1 == compressed_size) {

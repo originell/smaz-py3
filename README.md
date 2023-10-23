@@ -17,7 +17,7 @@ According to the original code and notes, it achieves the best compression with 
 strings (up to 50%) that do not contain a ton of numbers. However, any other language
 might just work as well (allegedly still up to 30%).
 
-Note that in certain cases it is possible that the compression increases the size.
+Note that in certain cases, it is possible that the compression increases the size.
 Keep that in mind and maybe first run some tests. Measuring size is explained in the
 example below as well.
 
