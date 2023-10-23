@@ -1,5 +1,7 @@
 # smaz-py3
 
+![PyPI - Downloads](https://img.shields.io/pypi/dm/smaz-py3)
+
 Small string compression using [_smaz_](https://github.com/antirez/smaz) compression
 algorithm.
 
