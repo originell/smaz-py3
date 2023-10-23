@@ -14,6 +14,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 setup(
     name="smaz-py3",
     version=__version__,
+    python_requires='>=3.7',
     description="Small string compression using smaz, supports Python 3.",
     long_description=long_description,
     long_description_content_type="text/markdown",
