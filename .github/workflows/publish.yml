@@ -1,8 +1,9 @@
 name: Publish
 
-on:
-  release:
-    types: [ published ]
+#on:
+#  release:
+#    types: [ published ]
+on: [push]
 
 # Thanks to pybase64 for having a great build process to steal from.
 jobs:
@@ -27,14 +28,14 @@ jobs:
           - os: macos-latest
             archs: "x86_64, arm64"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
       - name: Set up QEMU
         if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.0
         env:
@@ -46,7 +47,7 @@ jobs:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         name: Install Python
         with:
@@ -72,11 +73,11 @@ jobs:
           pytest
           popd
           popd
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           path: dist/*.tar.gz
-  upload_pypi:
-    name: Upload to (Test) PyPI
+  upload_test_pypi:
+    name: Upload to Test PyPI
     needs: [ build_wheels, build_sdist ]
     runs-on: ubuntu-latest
     if: github.repository == 'originell/smaz-py3'
@@ -92,11 +93,41 @@ jobs:
           password: ${{ secrets.PYPI_TEST_TOKEN }}
           skip_existing: true
           repository_url: https://test.pypi.org/legacy/
-      - name: Upload to PyPI
-        # upload to PyPI on every tag starting with 'v'
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: pypa/gh-action-pypi-publish@release/v1
+  test_install:
+    name: Test install on ${{ matrix.os }}
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_RELEASE_TOKEN }}
-          skip_existing: true
+          python-version: "${{ matrix.python-version }}"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip || true
+      - name: Test
+        run: |
+          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple smaz-py3
+          python -c "import smaz; print(smaz.compress('foobar'))"
+#  upload_pypi:
+#    name: Upload to PyPI
+#    needs: [ build_wheels, build_sdist ]
+#    runs-on: ubuntu-latest
+#    if: github.repository == 'originell/smaz-py3'
+#    steps:
+#      - uses: actions/download-artifact@v3
+#        with:
+#          name: artifact
+#          path: dist
+#      - name: Upload to PyPI
+#        # upload to PyPI on every tag starting with 'v'
+#        if: startsWith(github.ref, 'refs/tags/v')
+#        uses: pypa/gh-action-pypi-publish@release/v1
+#        with:
+#          user: __token__
+#          password: ${{ secrets.PYPI_RELEASE_TOKEN }}
+#          skip_existing: true
