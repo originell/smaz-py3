@@ -94,6 +94,7 @@ jobs:
           skip_existing: true
           repository_url: https://test.pypi.org/legacy/
   test_install:
+    needs: [ upload_test_pypi ]
     name: Test install on ${{ matrix.os }}
     runs-on: "${{ matrix.os }}"
     strategy:
