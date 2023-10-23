@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.1.3 - 2023-10-24
+
+Fixes a bug preventing installing on Windows ([#3](https://github.com/originell/smaz-py3/issues/3)). 
+
+Thanks to everyone who reported!
+
 # 1.1.2 - 2023-01-19
 
 Python 3.11 Support
