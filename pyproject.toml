@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "smaz-py3"
+version = "0.1.0"
+description = ""
+authors = ["krishnaduttPanchagnula <krishnadutt123@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.dev-dependencies]
+mypy = "*"
+ipdb = "*"
+ipython = "*"
+black = "*"
+flake8 = "*"
+pytest = "*"
+pytest-sugar = "*"
+pytest-cov = "*"
+hypothesis = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
