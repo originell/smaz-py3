@@ -1,0 +1,31 @@
+[build-system]
+requires = ['setuptools>=40.8.0']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = "smaz-py3"
+description = "Small string compression using smaz, supports Python 3."
+authors = [
+    {name = "Luis Nell", email = "luis@originell.org"}
+]
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.7"
+keywords = ["smaz", "string", "compression"]
+license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    'importlib-metadata; python_version<"3.8"',
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/originell/smaz-py3"
+Documentation = "https://github.com/originell/smaz-py3/blob/main/README.md"
+Repository = "https://github.com/originell/smaz-py3.git"
+Changelog = "https://github.com/originell/smaz-py3/blob/main/CHANGELOG.md"
