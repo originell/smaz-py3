@@ -22,5 +22,5 @@ jobs:
         pip install pytest hypothesis setuptools
     - name: Test with pytest
       run: |
-        pip install -e
+        pip install -e .
         pytest
