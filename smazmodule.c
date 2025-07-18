@@ -85,7 +85,7 @@ static PyObject *py_smaz_decompress(PyObject *self, PyObject *args) {
      * times we have to run this loop and memory usage.
      */
     output_buffer_size *= 2;
-    output_buffer = (char *)malloc(output_buffer_size);
+    output_buffer = (char *)realloc(output_buffer, output_buffer_size);
     // try again. the while() on top then checks if it did fit this time around.
     decompressed_size = smaz_decompress(compressed_data, compressed_data_size,
                                         output_buffer, output_buffer_size);
