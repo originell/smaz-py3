@@ -9,7 +9,7 @@ jobs:
     name: Linux / Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/astral-sh/uv:latest
+      image: ghcr.io/astral-sh/uv:bookworm
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
