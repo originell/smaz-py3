@@ -105,6 +105,24 @@ above sentence, compressed, has the NULL byte right after the `H` (`H\x00\xfeqâ€
 That's why it stops right then and there. Again, `smaz-py3` is not affected by this,
 mostly because I got lucky in choosing this example sentence.
 
+## Development
+
+This project is managed with [uv](https://docs.astral.sh/uv/). After installing uv, run:
+
+```sh
+uv sync
+```
+
+This will create a virtual environment with the package and the default development dependencies (formatters, linters, debuggers, and test tools such as `ruff`, `ipdb`, `ipython`, and `pytest`). Use `uv run` to invoke tools inside that environment, for example:
+
+```sh
+uv run pytest
+uv run ruff check .
+uv run ruff format
+```
+
+See the [uv documentation](https://docs.astral.sh/uv/) for additional commands such as locking dependencies or publishing releases.
+
 ## Credits
 
 Credit where credit is due. First to [antirez's SMAZ compression](https://github.com/antirez/smaz)
