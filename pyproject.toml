@@ -4,6 +4,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = "smaz-py3"
+version = "1.1.4"
 description = "Small string compression using smaz, supports Python 3."
 authors = [
     {name = "Luis Nell", email = "luis@originell.org"}
@@ -19,7 +20,6 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "License :: OSI Approved :: MIT License",
 ]
-dynamic = ["version"]
 
 [project.urls]
 Homepage = "https://github.com/originell/smaz-py3"
@@ -51,3 +51,8 @@ dev = [
 
 [tool.uv]
 default-groups = ["dev"]
+
+[tool.setuptools]
+ext-modules = [
+    {name = "smaz", sources = ["smazmodule.c", "smaz/smaz.c"]}
+]
