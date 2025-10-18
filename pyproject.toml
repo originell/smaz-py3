@@ -57,6 +57,12 @@ dev = [
 [tool.uv]
 default-groups = ["dev"]
 
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F"]
+
 [tool.setuptools]
 ext-modules = [
     {name = "smaz", sources = ["smazmodule.c", "smaz/smaz.c"]}

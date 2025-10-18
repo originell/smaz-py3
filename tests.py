@@ -72,7 +72,10 @@ def test_compress_non_bytes():
         "the end",
         "not-a-g00d-Exampl333",
         "Smaz is a simple compression library",
-        "Nothing is more difficult, and therefore more precious, than to be able to decide",
+        (
+            "Nothing is more difficult, and therefore more precious, "
+            "than to be able to decide"
+        ),
         "this is an example of what works very well with smaz",
         "1000 numbers 2000 will 10 20 30 compress very little",
         "and now a few italian sentences:",
