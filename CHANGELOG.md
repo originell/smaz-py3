@@ -1,3 +1,10 @@
+# Unreleased
+
+- Switch project management to uv with a shared `pyproject.toml` and `uv.lock`.
+- Document uv-based development workflow and default tooling.
+- Require Python 3.10 or newer for building and development tooling.
+- Consolidate code formatting and linting on Ruff and align development tools to the latest releases that still support Python 3.10.
+
 # Changelog
 
 # 1.1.3 - 2023-10-24

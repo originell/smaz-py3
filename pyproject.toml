@@ -1,5 +1,5 @@
 [build-system]
-requires = ['setuptools>=40.8.0']
+requires = ['setuptools>=64']
 build-backend = 'setuptools.build_meta'
 
 [project]
@@ -9,7 +9,7 @@ authors = [
     {name = "Luis Nell", email = "luis@originell.org"}
 ]
 readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 keywords = ["smaz", "string", "compression"]
 license = {file = "LICENSE"}
 classifiers = [
@@ -19,9 +19,6 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "License :: OSI Approved :: MIT License",
 ]
-dependencies = [
-    'importlib-metadata; python_version<"3.8"',
-]
 dynamic = ["version"]
 
 [project.urls]
@@ -29,3 +26,28 @@ Homepage = "https://github.com/originell/smaz-py3"
 Documentation = "https://github.com/originell/smaz-py3/blob/main/README.md"
 Repository = "https://github.com/originell/smaz-py3.git"
 Changelog = "https://github.com/originell/smaz-py3/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "hypothesis>=6.142.1",
+    "ipdb>=0.13.13",
+    "ipython>=8.37.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "pytest-sugar>=1.1.1",
+    "ruff>=0.14.1",
+]
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.142.1",
+    "ipdb>=0.13.13",
+    "ipython>=8.37.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "pytest-sugar>=1.1.1",
+    "ruff>=0.14.1",
+]
+
+[tool.uv]
+default-groups = ["dev"]
