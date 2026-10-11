@@ -2,158 +2,346 @@ name: Publish
 
 on:
   release:
-    types: [ published ]
+    types: [published]
+  workflow_dispatch:
 
-# Thanks to pybase64 for having a great build process to steal from.
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  UV_VERSION: "0.13.0"
+  RUST_TOOLCHAIN: "1.99.0"
+  MATURIN_VERSION: "1.15.0"
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  build_wheels:
-    name: Build ${{ matrix.archs }} wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            archs: "x86_64, i686"
-          - os: ubuntu-latest
-            archs: "aarch64"
-          - os: ubuntu-latest
-            archs: "ppc64le"
-          - os: ubuntu-latest
-            archs: "s390x"
-          - os: windows-latest
-            archs: "AMD64"
-          - os: windows-latest
-            archs: "x86"
-          - os: macos-latest
-            archs: "x86_64, arm64"
+  release_checks:
+    name: Release checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - name: Install Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          python-version: '3.x'
-      - name: Set up QEMU
-        if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v3
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.12.0
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: rustfmt, clippy
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv sync --python 3.15 --frozen
+      - name: Check release tag and commit
+        if: github.event_name == 'release'
         env:
-          CIBW_ARCHS: "${{ matrix.archs }}"
-      - uses: actions/upload-artifact@v3
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          uv run --no-sync python scripts/check_release.py --tag "$RELEASE_TAG"
+          git fetch origin main --no-tags
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - run: uv run --no-sync prek run --all-files
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked
+      - name: Check third-party license notices
+        run: |
+          cargo fetch --locked
+          uv run --no-sync python scripts/update_licenses.py --check
+
+  build_wheels:
+    name: Python ${{ matrix.python-version }} / ${{ matrix.platform.target }}
+    needs: release_checks
+    runs-on: ${{ matrix.platform.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+        platform:
+          - {os: ubuntu-latest, target: x86_64, python-arch: x64, container: "quay.io/pypa/manylinux2014_x86_64@sha256:f6a6f153c9cf45470507ebbc27013e5db14ce21331b62fd2c540561f25e5f0a5"}
+          - {os: ubuntu-latest, target: i686, python-arch: x64, container: "quay.io/pypa/manylinux2014_i686@sha256:30305867f278896ee117b0d162a8e4f9b7b16819e6590f6139e14c5ed5b23fdd"}
+          - {os: ubuntu-latest, target: aarch64, python-arch: x64, container: "ghcr.io/rust-cross/manylinux2014-cross@sha256:32c92568ebee8db53e0598c21bcd06a6dd1649d45d507646a8a49313c50325f8"}
+          - {os: ubuntu-latest, target: ppc64le, python-arch: x64, container: "ghcr.io/rust-cross/manylinux2014-cross@sha256:6bc0da449a9890e705b10c88e056ea8e00eaf32ee512345a7156f92b379a3450"}
+          - {os: ubuntu-latest, target: s390x, python-arch: x64, container: "ghcr.io/rust-cross/manylinux2014-cross@sha256:3a7baad42e2f88815bfba320e7d1713bb05a380683008da25eba07dfc8a50703"}
+          - {os: windows-latest, target: x86_64, python-arch: x64}
+          - {os: windows-latest, target: i686, python-arch: x86}
+          - {os: macos-15-intel, target: x86_64, python-arch: x64}
+          - {os: macos-latest, target: aarch64, python-arch: arm64}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          path: ./wheelhouse/*.whl
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.platform.python-arch }}
+      - name: Build release wheels
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          target: ${{ matrix.platform.target }}
+          maturin-version: ${{ env.MATURIN_VERSION }}
+          rust-toolchain: ${{ env.RUST_TOOLCHAIN }}
+          args: --release --locked --out dist --interpreter ${{ matrix.python-version }}
+          manylinux: auto
+          container: ${{ matrix.platform.container || '' }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wheels-${{ matrix.platform.os }}-${{ matrix.platform.target }}-${{ matrix.python-version }}
+          path: dist/*.whl
+          if-no-files-found: error
+
   build_sdist:
     name: Build source distribution
+    needs: release_checks
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/astral-sh/uv:bookworm
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - name: Prepare environment
-        id: env
-        run: |
-          uv python install 3.10
-          uv sync --python 3.10 --frozen
-          echo "python=${PWD}/.venv/bin/python" >> "$GITHUB_OUTPUT"
-      - name: Install build backend
-        run: uv run --python 3.10 python -m pip install build
-      - name: Build sdist
-        run: uv run --python 3.10 python -m build --sdist
-      - name: Test sdist
-        run: |
-          set -exuo pipefail
-          mkdir from_source
-          pushd from_source
-          tar -xf ../dist/smaz*.tar.gz
-          pushd smaz*
-          # make extension mandatory
-          export CIBUILDWHEEL=1
-          # build extension
-          "${{ steps.env.outputs.python }}" setup.py build_ext -i -f
-          # test
-          "${{ steps.env.outputs.python }}" -m pytest
-          popd
-          popd
-      - uses: actions/upload-artifact@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv sync --python 3.11 --frozen --only-group build
+      - run: uv run --no-sync maturin sdist --out dist
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sdist
           path: dist/*.tar.gz
-  upload_test_pypi:
-    name: Upload to Test PyPI
-    needs: [ build_wheels, build_sdist ]
+          if-no-files-found: error
+
+  test_sdist:
+    name: Test source distribution
+    needs: build_sdist
     runs-on: ubuntu-latest
-    if: github.repository == 'originell/smaz-py3'
+    timeout-minutes: 30
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          name: artifact
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sdist
           path: dist
-      - name: Upload to Test PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - run: uv export --frozen --only-group test --no-emit-project --output-file target/test-requirements.txt
+      - run: uv export --frozen --only-group build --no-emit-project --output-file target/build-constraints.txt
+      - name: Install and test the source distribution
+        run: |
+          set -euo pipefail
+          mkdir -p target/from-source
+          tar -xf dist/smaz*.tar.gz -C target/from-source
+          uv venv --python 3.11 target/sdist-test
+          uv pip install --python target/sdist-test/bin/python --require-build-hashes --build-constraints target/build-constraints.txt dist/smaz*.tar.gz
+          uv pip install --python target/sdist-test/bin/python --require-hashes -r target/test-requirements.txt
+          cd target/from-source/smaz*
+          uv run --no-project --python "$GITHUB_WORKSPACE/target/sdist-test/bin/python" python -m pytest
+
+  check_distributions:
+    name: Check built release metadata
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.15"
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv sync --python 3.15 --frozen --only-group release
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sdist
+          path: dist
+      - name: Verify package versions, notices, and completeness
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: >-
+          uv run --no-sync python scripts/check_release.py
+          --tag "$RELEASE_TAG" --dist dist --expected-wheels 45
+      - run: uv run --no-sync twine check --strict dist/*
+
+  test_wheels:
+    name: Wheel tests / ${{ matrix.platform.os }} / ${{ matrix.platform.python-arch }} / Python ${{ matrix.python-version }}
+    needs: check_distributions
+    runs-on: ${{ matrix.platform.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+        platform:
+          - {os: ubuntu-latest, python-arch: x64}
+          - {os: windows-latest, python-arch: x64}
+          - {os: windows-latest, python-arch: x86}
+          - {os: macos-15-intel, python-arch: x64}
+          - {os: macos-latest, python-arch: arm64}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        id: python
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.platform.python-arch }}
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - name: Install the built wheel and test tools
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          uv venv --python "$PYTHON_PATH"
+          uv pip install --no-index --find-links dist --only-binary :all: smaz-py3
+          uv export --frozen --only-group test --no-emit-project --output-file target/test-requirements.txt
+          uv pip install --require-hashes -r target/test-requirements.txt
+      - name: Smoke-test compression in the installed wheel
+        run: |
+          uv run --no-project python - <<'PY'
+          from pathlib import Path
+          import smaz
+
+          assert 'site-packages' in Path(smaz.__file__).parts, smaz.__file__
+          compressed = smaz.compress('the')
+          assert compressed == b'\x01', compressed
+          assert smaz.decompress(compressed) == 'the'
+          print('Compression smoke test passed: 3 bytes -> 1 byte')
+          PY
+      - name: Test the installed wheel
+        run: |
+          uv run --no-project python -m pytest
+
+  upload_test_pypi:
+    name: Upload to TestPyPI
+    needs: [check_distributions, test_wheels, test_sdist]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'release' && github.repository == 'originell/smaz-py3'
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/smaz-py3
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sdist
+          path: dist
+      # Upstream v1.14.2, commit dc37677b2e1c63e2034f94d8a5b11f265b73ba33.
+      # Run the same publisher image by digest; the composite wrapper uses a mutable tag.
+      - uses: docker://ghcr.io/pypa/gh-action-pypi-publish@sha256:a68d05519f6d7e47372aeaddab80b851b69afa89be179ec41775c72c4e3ab2d5
         with:
           user: __token__
-          password: ${{ secrets.PYPI_TEST_TOKEN }}
-          skip_existing: true
-          repository_url: https://test.pypi.org/legacy/
-  test_install_linux:
-    needs: [ upload_test_pypi ]
-    name: Test install on Linux / Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/astral-sh/uv:bookworm
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Python ${{ matrix.python-version }}
-        id: python
-        run: |
-          PY="${{ matrix.python-version }}"
-          uv python install "$PY"
-          echo "path=$(uv python find "$PY")" >> "$GITHUB_OUTPUT"
-      - name: Test
-        run: |
-          PYTHON="${{ steps.python.outputs.path }}"
-          "$PYTHON" -m pip install --upgrade pip
-          "$PYTHON" -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple smaz-py3
-          "$PYTHON" -c "import smaz; print(smaz.compress('foobar'))"
+          password: ""
+          packages-dir: dist
+          verify-metadata: "true"
+          attestations: true
+          skip-existing: true
+          verbose: "true"
+          print-hash: "true"
+          repository-url: https://test.pypi.org/legacy/
 
-  test_install_windows:
-    needs: [ upload_test_pypi ]
-    name: Test install on Windows / Python ${{ matrix.python-version }}
-    runs-on: windows-latest
+  test_install:
+    name: TestPyPI / ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    needs: upload_test_pypi
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "${{ matrix.python-version }}"
-      - name: Install dependencies
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv venv --python python
+      - name: Install the release from TestPyPI
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          python -m pip install --upgrade pip
-      - name: Test
+          RELEASE_VERSION="${RELEASE_TAG#v}"
+          uv pip install --only-binary :all: --index-url https://test.pypi.org/simple/ "smaz-py3==$RELEASE_VERSION"
+      - name: Smoke-test compression from TestPyPI
         run: |
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple smaz-py3
-          python -c "import smaz; print(smaz.compress('foobar'))"
+          uv run --no-project python - <<'PY'
+          import smaz
+
+          compressed = smaz.compress('the')
+          assert compressed == b'\x01', compressed
+          assert smaz.decompress(compressed) == 'the'
+          assert smaz.decompress(smaz.compress('foobar')) == 'foobar'
+          print('Compression smoke test passed: 3 bytes -> 1 byte')
+          PY
 
   upload_pypi:
     name: Upload to PyPI
-    needs: [ test_install_linux, test_install_windows, build_wheels, build_sdist ]
+    needs: [test_install, check_distributions, test_wheels, test_sdist]
     runs-on: ubuntu-latest
-    if: github.repository == 'originell/smaz-py3'
+    timeout-minutes: 15
+    if: github.event_name == 'release' && github.repository == 'originell/smaz-py3' && startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: pypi
+      url: https://pypi.org/p/smaz-py3
+    permissions:
+      id-token: write
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: artifact
+          pattern: wheels-*
           path: dist
-      - name: Upload to PyPI
-        # upload to PyPI on every tag starting with 'v'
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: pypa/gh-action-pypi-publish@release/v1
+          merge-multiple: true
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sdist
+          path: dist
+      # Keep this digest aligned with the TestPyPI publisher above.
+      - uses: docker://ghcr.io/pypa/gh-action-pypi-publish@sha256:a68d05519f6d7e47372aeaddab80b851b69afa89be179ec41775c72c4e3ab2d5
         with:
           user: __token__
-          password: ${{ secrets.PYPI_RELEASE_TOKEN }}
-          skip_existing: true
+          password: ""
+          packages-dir: dist
+          repository-url: https://upload.pypi.org/legacy/
+          verify-metadata: "true"
+          attestations: true
+          skip-existing: "false"
+          verbose: "true"
+          print-hash: "true"

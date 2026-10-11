@@ -1,38 +1,74 @@
-# Unreleased
-
-- Switch project management to uv with a shared `pyproject.toml` and `uv.lock`.
-- Document uv-based development workflow and default tooling.
-- Require Python 3.10 or newer for building and development tooling.
-- Consolidate code formatting and linting on Ruff and align development tools to the latest releases that still support Python 3.10.
-
 # Changelog
 
-# 1.1.3 - 2023-10-24
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-Fixes a bug preventing installing on Windows ([#3](https://github.com/originell/smaz-py3/issues/3)). 
+## Unreleased
+
+### Added
+
+- Add compatibility tests and a repeatable benchmark against the original C extension.
+
+### Changed
+
+- Port the codec and Python extension to Rust with PyO3 and maturin, preserving
+  the SMAZ wire format and API.
+- Improve Python API performance: a local pyperf run on CPython 3.12 and Apple
+  Silicon measured a **2.15× geometric mean speedup** over the C extension across
+  30 compression/decompression cases. See the
+  [benchmark results](benchmarks/README.md#local-pyperf-result-2026-10-11).
+- Switch project management to uv with a shared `pyproject.toml` and `uv.lock`.
+- Document uv-based development workflow and default tooling.
+- Require Python 3.11 or newer and test Python 3.11–3.15, following the upstream
+  support lifecycle.
+- Consolidate code formatting and linting on Ruff.
+
+### Removed
+
+- Drop Python 3.10 support; it reached end of life on 2026-10-01.
+
+### Fixed
+
+- Reject truncated compressed data with `ValueError`.
+- Preserve embedded NUL bytes when decoding externally produced SMAZ data.
+
+## 1.1.3 - 2023-10-24
+
+### Fixed
+
+- Fix a bug preventing installation on Windows
+  ([#3](https://github.com/originell/smaz-py3/issues/3)).
 
 Thanks to everyone who reported!
 
-# 1.1.2 - 2023-01-19
+## 1.1.2 - 2023-01-19
 
-Python 3.11 Support
+### Added
 
-# 1.1.1 - 2022-03-23
+- Python 3.11 support.
 
-Python 3.10 Support
+## 1.1.1 - 2022-03-23
 
-# 1.1.0 - 2021-08-24
+### Added
+
+- Python 3.10 support.
+
+## 1.1.0 - 2021-08-24
 
 This release does not introduce any new features. Only the way we package smaz-py3 is
 updated. The changes should make installation faster and easier for almost everyone.
 
-In detail: switched to building wheels for all popular platforms. This also includes 
-Apple Silicon based Macs.
+### Changed
 
-# 1.0.2 - 2021-07-29
+- Switch to building wheels for all popular platforms, including Apple Silicon Macs.
 
-Adds support for Python 3.9.
+## 1.0.2 - 2021-07-29
 
-# 1.0.1 - 2019-12-25
+### Added
 
-First public release.
+- Python 3.9 support.
+
+## 1.0.1 - 2019-12-25
+
+### Added
+
+- First public release.

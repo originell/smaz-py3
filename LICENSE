@@ -26,7 +26,9 @@ below.
 
 ---
 
-The `smaz` folder is licensed under the BSD-3 clause license:
+The SMAZ codebook and codec in `src/codebook.rs` and `src/codec.rs`, and the
+original C implementation in `benchmarks/reference/smaz`, are derived from
+code licensed under the BSD-3 clause license:
 
 Copyright (c) 2006-2009, Salvatore Sanfilippo
 All rights reserved.

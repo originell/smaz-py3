@@ -1,0 +1,83 @@
+default_install_hook_types = ["pre-commit", "pre-push"]
+default_stages = ["pre-commit"]
+exclude = "^benchmarks/reference/"
+
+[[repos]]
+repo = "builtin"
+hooks = [
+  { id = "check-merge-conflict" },
+  { id = "check-toml" },
+  { id = "check-yaml" }
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+  {
+    id = "ruff-check",
+    name = "Ruff lint",
+    entry = "uv run --no-sync ruff check",
+    language = "system",
+    types_or = [
+      "python",
+      "pyi"
+    ]
+  },
+  {
+    id = "ruff-format",
+    name = "Ruff format check",
+    entry = "uv run --no-sync ruff format --check",
+    language = "system",
+    types_or = [
+      "python",
+      "pyi"
+    ]
+  },
+  {
+    id = "cargo-fmt",
+    name = "Rust format check",
+    entry = "cargo fmt --check",
+    language = "system",
+    files = '(^Cargo\.toml$|\.rs$)',
+    pass_filenames = false
+  },
+  {
+    id = "uv-lock",
+    name = "Check uv lockfile",
+    entry = "uv lock --check",
+    language = "system",
+    files = '^(pyproject\.toml|uv\.lock)$',
+    pass_filenames = false
+  },
+  {
+    id = "cargo-clippy",
+    name = "Rust Clippy",
+    entry = "cargo clippy --locked --all-targets -- -D warnings",
+    language = "system",
+    files = '(^Cargo\.(toml|lock)$|\.rs$)',
+    pass_filenames = false,
+    stages = ["pre-push"]
+  },
+  {
+    id = "cargo-test",
+    name = "Rust tests",
+    entry = "cargo test --locked",
+    language = "system",
+    files = '(^Cargo\.(toml|lock)$|\.rs$)',
+    pass_filenames = false,
+    stages = ["pre-push"]
+  }
+]
+
+[[repos]]
+repo = "https://github.com/rhysd/actionlint"
+rev = "914e7df21a07ef503a81201c76d2b11c789d3fca" # v1.7.12
+hooks = [
+  {
+    id = "actionlint",
+    args = [
+      "-shellcheck=",
+      "-pyflakes="
+    ]
+  }
+]
