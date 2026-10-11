@@ -28,25 +28,25 @@ def release_files(tmp_path):
             "Metadata-Version: 2.4\nName: smaz-py3\n"
             f"Version: {metadata_version}\nRequires-Python: >=3.11\n\n"
         ).encode()
+        licenses = {
+            name: (tmp_path / name)
+            .read_bytes()
+            .replace(b"\r\n", b"\n")
+            .replace(b"\n", license_newline)
+            for name in ("LICENSE", "THIRD_PARTY_LICENSES.txt")
+        }
         info = f"smaz_py3-{filename_version}.dist-info"
         with ZipFile(
             dist / f"smaz_py3-{filename_version}-cp312-cp312-any.whl", "w"
         ) as z:
             z.writestr(f"{info}/METADATA", metadata)
-            for name in ("LICENSE", "THIRD_PARTY_LICENSES.txt"):
-                data = (tmp_path / name).read_bytes().replace(b"\n", license_newline)
+            for name, data in licenses.items():
                 z.writestr(f"{info}/licenses/{name}", data)
             if extra:
                 z.writestr(*extra)
         with tarfile.open(dist / f"smaz_py3-{filename_version}.tar.gz", "w:gz") as t:
             files = {"PKG-INFO": metadata}
-            files.update(
-                (
-                    name,
-                    (tmp_path / name).read_bytes().replace(b"\n", license_newline),
-                )
-                for name in ("LICENSE", "THIRD_PARTY_LICENSES.txt")
-            )
+            files.update(licenses)
             for name, data in files.items():
                 member = tarfile.TarInfo(f"smaz_py3-{filename_version}/{name}")
                 member.size = len(data)
@@ -68,8 +68,13 @@ def test_wrong_release_tag(tag):
 
 
 @pytest.mark.parametrize("license_newline", [b"\n", b"\r\n"])
-def test_complete_release(release_files, license_newline):
+@pytest.mark.parametrize("source_newline", [b"\n", b"\r\n"])
+def test_complete_release(release_files, license_newline, source_newline):
     root, build = release_files
+    for name in ("LICENSE", "THIRD_PARTY_LICENSES.txt"):
+        path = root / name
+        data = path.read_bytes().replace(b"\r\n", b"\n")
+        path.write_bytes(data.replace(b"\n", source_newline))
     check_distributions(
         build(license_newline=license_newline), "1.2.0", expected_wheels=1, root=root
     )
