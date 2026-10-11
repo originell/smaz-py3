@@ -1,34 +1,43 @@
 # smaz-py3
 
-![PyPI - Downloads](https://img.shields.io/pypi/dm/smaz-py3)
+[![Downloads/month](https://img.shields.io/pypi/dm/smaz-py3)](https://pypistats.org/packages/smaz-py3)
+[![PyPI version](https://img.shields.io/pypi/v/smaz-py3)](https://pypi.org/project/smaz-py3/)
+[![CI](https://img.shields.io/github/actions/workflow/status/originell/smaz-py3/main.yml?branch=main&label=CI)](https://github.com/originell/smaz-py3/actions/workflows/main.yml)
+[![Python versions](https://img.shields.io/pypi/pyversions/smaz-py3)](https://pypi.org/project/smaz-py3/)
 
 Small string compression using [_smaz_](https://github.com/antirez/smaz) compression
 algorithm.
 
-This library wraps the original C code, so it should be quite fast. It also has a
-testsuite that uses [hypothesis](https://hypothesis.readthedocs.io/en/latest/) based
-property testing - a fancy way of saying that the tests are run with randomly
-generated strings using most of unicode, to better guard against edge cases.
+Support follows Python's upstream lifecycle, including security fixes. The current
+supported releases are Python 3.11–3.15.
 
 ## Why do I need this?
 
-You are working with tons of short strings (text messages, urls,...) and want to save
-space.
+Use smaz when you store or send many short text values individually, and saving a
+few bytes per value adds up. Examples include status messages, short descriptions
+in database records or caches, paths, and URLs.
 
-According to the original code and notes, it achieves the best compression with english
-strings (up to 50%) that do not contain a ton of numbers. However, any other language
-might just work as well (allegedly still up to 30%).
+Here are some actual sizes, comparing UTF-8 input with `smaz.compress()` output:
 
-Note that in certain cases, it is possible that the compression increases the size.
-Keep that in mind and maybe first run some tests. Measuring size is explained in the
-example below as well.
+| Text | UTF-8 bytes | Compressed bytes |
+| --- | ---: | ---: |
+| `waiting for approval` | 20 | 11 |
+| `the connection was closed` | 25 | 12 |
+| `/users/settings` | 15 | 10 |
+| `http://example.com` | 18 | 8 |
+| `12345678901234567890` | 20 | 22 |
+
+smaz's built-in dictionary works well with common English text. Numbers and text
+that the dictionary cannot match can get larger, as the last example shows.
+Measure your own data before choosing it. The usage example below shows how to
+measure the sizes.
 
 ## How do I use this?
 
 Let's install:
 
 ```sh
-$ pip install smaz-py3
+$ uv add smaz-py3
 ```
 
 _Note_: the `-py3` is important. There is an original release, kudos to Benjamin
@@ -41,10 +50,11 @@ import smaz
 # First we compress our example sentence.
 compressed = smaz.compress("The quick brown fox jumps over the lazy dog.")
 # The output is raw bytes. As can be seen in the decompress() call below.
-# Now, we decompress these raw bytes again. This should return our example sentence.
+# Now, we decompress these raw bytes again. This should return our example
+# sentence.
 decompressed = smaz.decompress(b'H\x00\xfeq&\x83\xfek^sA)\xdc\xfa\x00\xfej&-<\x95\xe7\r\x0b\x89\xdbG\x18\x06;n')
-#  This does not fail, which means we have successfully compressed and decompressed
-#  without damaging anything.
+# This does not fail, which means we have successfully compressed and
+# decompressed without damaging anything.
 assert decompressed == "The quick brown fox jumps over the lazy dog."
 ```
 
@@ -79,6 +89,17 @@ My reasoning behind this is that in most scenarios you want to clean that away
 beforehand anyways. If you think this is wrong, please open up an
 [issue on github](https://github.com/originell/smaz-py3). I am happy for further input!
 
+### Decoder errors
+
+Catch `ValueError` for incomplete SMAZ literals. For example,
+`decompress(b"\xfe")` fails because the literal marker has no following byte.
+Catch `UnicodeDecodeError` when the decoded bytes are not valid UTF-8.
+
+When decoding SMAZ data from another source, expect `decompress()` to preserve
+embedded NUL characters (`\x00`) and the text after them. The old C wrapper
+truncated output at the first NUL. Remove or replace embedded NULs before
+calling `compress()`; otherwise, it raises `ValueError`.
+
 ## Migrating from Python 2 `smaz`
 
 If you have been using the [Python 2 `smaz` library](https://pypi.org/project/smaz/),
@@ -99,29 +120,16 @@ library. Using Python 2.7.16:
 So, if you are actually upgrading from this, please make sure that you are not
 affected by this. `smaz-py3` is not prone to this bug.
 
-Behind the scenes, smaz uses NULL bytes in compression. However, when converting from
-C back to a Python string object, NULL is used to mark the end of the string. The
-above sentence, compressed, has the NULL byte right after the `H` (`H\x00\xfeq…`).
+Behind the scenes, smaz uses NUL bytes in compression. However, when converting from
+C back to a Python string object, NUL is used to mark the end of the string. The
+above sentence, compressed, has the NUL byte right after the `H` (`H\x00\xfeq…`).
 That's why it stops right then and there. Again, `smaz-py3` is not affected by this,
 mostly because I got lucky in choosing this example sentence.
 
-## Development
+## Contributing
 
-This project is managed with [uv](https://docs.astral.sh/uv/). After installing uv, run:
-
-```sh
-uv sync
-```
-
-This will create a virtual environment with the package and the default development dependencies (formatters, linters, debuggers, and test tools such as `ruff`, `ipdb`, `ipython`, and `pytest`). Use `uv run` to invoke tools inside that environment, for example:
-
-```sh
-uv run pytest
-uv run ruff check .
-uv run ruff format
-```
-
-See the [uv documentation](https://docs.astral.sh/uv/) for additional commands such as locking dependencies or publishing releases.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, tests, Git hooks,
+benchmarks, and distribution builds.
 
 ## Credits
 

@@ -1,29 +1,30 @@
 [build-system]
-requires = ['setuptools>=64']
-build-backend = 'setuptools.build_meta'
+requires = ['maturin>=1.12,<2']
+build-backend = 'maturin'
 
 [project]
 name = "smaz-py3"
-version = "1.1.4"
+dynamic = ["version"]
 description = "Small string compression using smaz, supports Python 3."
 authors = [
     {name = "Luis Nell", email = "luis@originell.org"}
 ]
 readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["smaz", "string", "compression"]
-license = {file = "LICENSE"}
+license = "MIT AND BSD-3-Clause"
+license-files = ["LICENSE", "THIRD_PARTY_LICENSES.txt"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "License :: OSI Approved :: BSD License",
-    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.15",
+    "Programming Language :: Rust",
+    "Typing :: Typed",
 ]
 
 [project.urls]
@@ -32,23 +33,24 @@ Documentation = "https://github.com/originell/smaz-py3/blob/main/README.md"
 Repository = "https://github.com/originell/smaz-py3.git"
 Changelog = "https://github.com/originell/smaz-py3/blob/main/CHANGELOG.md"
 
-[project.optional-dependencies]
-dev = [
-    "hypothesis>=6.142.1",
-    "ipdb>=0.13.13",
-    "ipython>=8.37.0",
-    "pytest>=8.4.2",
-    "pytest-cov>=7.0.0",
-    "pytest-sugar>=1.1.1",
-    "ruff>=0.14.1",
-]
-
 [dependency-groups]
-dev = [
+build = ["maturin==1.15.0"]
+release = [
+    "packaging>=25",
+    "twine>=7,<8",
+]
+test = [
+    "setuptools>=64",
     "hypothesis>=6.142.1",
+    "pytest>=8.4.2",
+    "pyperf>=2.10,<3",
+]
+dev = [
+    {include-group = "build"},
+    {include-group = "test"},
     "ipdb>=0.13.13",
     "ipython>=8.37.0",
-    "pytest>=8.4.2",
+    "prek==0.5.5",
     "pytest-cov>=7.0.0",
     "pytest-sugar>=1.1.1",
     "ruff>=0.14.1",
@@ -56,14 +58,48 @@ dev = [
 
 [tool.uv]
 default-groups = ["dev"]
+required-version = ">=0.13.0"
+require-build-hashes = true
+preview-features = ["build-dependency-hashes"]
+build-constraint-dependencies = [
+    {requirement = "maturin==1.15.0", hashes = [
+        "sha256:0ebf9767892725083138e671c34482c660317a2f3d6a29fc0e0f34e9d8c99136",
+        "sha256:126e12e618b4db42f68c779a56d41f82a390145ba36ac3f621d057eb34f5ad9d",
+        "sha256:4f9d33e6c3f9615c8caceecbbbd440f8eb25a3ddeb687077682cd5eca2e9ae15",
+        "sha256:552c2be4afd43fe8d5c9f3ec8d4c4756d973b8dcbe94c14084390301f50243e1",
+        "sha256:653020a63525bb224e5ab0adf02e17a2e08bc86dbea7fc1399c9a56d7529b99e",
+        "sha256:6bf6dc62e22d4dcfd5a51244ff0d58975fa4979c48209fe84159617648956d82",
+        "sha256:7ab7eebffd7b8debca2265985de4eaeb332141276d24b9560b5ad484d4b3add1",
+        "sha256:7eb066372f541f8eb4909c79c5d9bd0b9e8125980bdf1ec9e8aba23c6c8d6c55",
+        "sha256:94b26cc8e8aba61a5f2099715fe640e18c5f678e9a500408b38761263954228a",
+        "sha256:bf29beddd0c6708f112db51d5275fc28b28b9e9c9c5faae387eaef662918b176",
+        "sha256:c40b4eae7bf5ef1f4b1af8d623fe4105016f93578fb15b764e741d08ec3b92dd",
+        "sha256:c7dc0c66c78d3debdd9c5aa807e861fbcbf07f3505d34b125df74c03986b0f48",
+        "sha256:cd35772633f489841132bc8e71d6fc7f842df30b9c05cd5cdf1ee1ddcb744cc7",
+        "sha256:da649988be98e87e009e51b1bf0d301b6a301bc0cecbdd60d40d8ba60748d1ca",
+    ]},
+]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F"]
 
-[tool.setuptools]
-ext-modules = [
-    {name = "smaz", sources = ["smazmodule.c", "smaz/smaz.c"]}
+[tool.maturin]
+module-name = "smaz"
+profile = "release"
+locked = true
+strip = true
+exclude = [{path = "RELEASING.md", format = "sdist"}]
+include = [
+    {path = "CONTRIBUTING.md", format = "sdist"},
+    {path = "scripts/*.py", format = "sdist"},
+    {path = "tests/**/*.py", format = "sdist"},
+    {path = "pytest.ini", format = "sdist"},
+    {path = "benchmarks/*.py", format = "sdist"},
+    {path = "benchmarks/*.md", format = "sdist"},
+    {path = "benchmarks/reference/**/*.c", format = "sdist"},
+    {path = "benchmarks/reference/**/*.h", format = "sdist"},
+    {path = "benchmarks/reference/**/*.md", format = "sdist"},
 ]

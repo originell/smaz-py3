@@ -1,0 +1,19 @@
+[package]
+name = "smaz-py3"
+version = "2.0.0"
+edition = "2021"
+rust-version = "1.83"
+license = "MIT AND BSD-3-Clause"
+description = "SMAZ small string compression for Python"
+repository = "https://github.com/originell/smaz-py3"
+
+[lib]
+name = "smaz"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = "0.29.3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

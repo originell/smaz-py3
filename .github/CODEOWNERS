@@ -1,0 +1,7 @@
+/.github/ @originell
+/scripts/ @originell
+/Cargo.toml @originell
+/Cargo.lock @originell
+/pyproject.toml @originell
+/uv.lock @originell
+/prek.toml @originell
