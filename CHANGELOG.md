@@ -2,7 +2,12 @@
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## Unreleased
+## 2.0.0 (unreleased)
+
+Upgrade to Python 3.11 or newer before installing 2.0.0. Existing `compress()` and
+`decompress()` calls and stored SMAZ data remain compatible with 1.x.
+Building from source now requires Rust 1.83 or newer; prebuilt wheels do not
+require a Rust compiler.
 
 ### Added
 

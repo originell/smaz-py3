@@ -11,6 +11,11 @@ algorithm.
 Support follows Python's upstream lifecycle, including security fixes. The current
 supported releases are Python 3.11–3.15.
 
+Version 2.0 uses Rust while preserving the `compress()` and `decompress()` API
+and the SMAZ compressed format. You can reuse data compressed with 1.x.
+Building from source requires Rust 1.83 or newer; installing a prebuilt wheel
+does not require a Rust compiler.
+
 ## Why do I need this?
 
 Use smaz when you store or send many short text values individually, and saving a

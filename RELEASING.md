@@ -1,6 +1,6 @@
 # Publishing a release
 
-For a package version such as `1.2.0`, publish a GitHub release tagged `v1.2.0`.
+For package version `2.0.0`, publish a GitHub release tagged `v2.0.0`.
 The Publish workflow builds the distributions, checks their metadata, runs the
 tests against installed wheels and the source archive, and uploads the same files
 to TestPyPI. After installation checks pass, approve the `pypi` deployment to
