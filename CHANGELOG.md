@@ -2,7 +2,7 @@
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## 2.0.0 (unreleased)
+## 2.0.0 - 2026-10-12
 
 Upgrade to Python 3.11 or newer before installing 2.0.0. Existing `compress()` and
 `decompress()` calls and stored SMAZ data remain compatible with 1.x.
