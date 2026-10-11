@@ -32,8 +32,8 @@ timings stay below 4096 decoded bytes because the original C wrapper leaks when
 growing its buffer. Compatibility tests cover larger inputs separately.
 
 Run on an idle machine, inspect pyperf's stability warnings, and repeat borderline
-results. CI uses `--fast` and uploads reports without enforcing the regression
-gate. The JSON reports retain samples and environment/compiler metadata.
+results. Run benchmarks locally because shared CI runners produce noisy timings.
+The JSON reports retain samples and environment/compiler metadata.
 
 ## Local pyperf result: 2026-10-11
 

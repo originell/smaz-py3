@@ -68,7 +68,7 @@ deleting a GitHub secret alone does not revoke its token.
 In [repository rulesets](https://github.com/originell/smaz-py3/settings/rules),
 protect `main` with pull requests, required CI checks, and restrictions on force
 pushes and deletion. After CI has run, require **Ruff and Rust checks** and the
-Python test matrix checks. Include **C versus Rust benchmark** in required checks.
+Python test matrix checks.
 When a second trusted maintainer can review your changes, require code-owner
 approval too. `.github/CODEOWNERS` assigns the workflow and release configuration
 to `@originell`; GitHub enforces that ownership only when review rules require it.
